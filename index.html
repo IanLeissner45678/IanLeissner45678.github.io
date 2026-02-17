@@ -435,6 +435,7 @@
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
@@ -668,6 +669,10 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Current user ID (set after authentication)
+        let currentUserId = null;
 
         // Sync status indicator
         let syncStatus = 'synced';
@@ -688,11 +693,23 @@
             }
         }
 
+        // Get user's data collection path
+        function getUserCollection() {
+            if (!currentUserId) {
+                console.error('No user authenticated');
+                return null;
+            }
+            return db.collection('users').doc(currentUserId).collection('trainingData');
+        }
+
         // Firebase data functions
         async function saveToFirebase(key, data) {
+            const collection = getUserCollection();
+            if (!collection) return;
+
             try {
                 updateSyncStatus('syncing');
-                await db.collection('trainingData').doc(key).set({ value: JSON.stringify(data) });
+                await collection.doc(key).set({ value: JSON.stringify(data) });
                 updateSyncStatus('synced');
             } catch (err) {
                 console.error('Firebase save error:', err);
@@ -701,9 +718,12 @@
         }
 
         async function deleteFromFirebase(key) {
+            const collection = getUserCollection();
+            if (!collection) return;
+
             try {
                 updateSyncStatus('syncing');
-                await db.collection('trainingData').doc(key).delete();
+                await collection.doc(key).delete();
                 updateSyncStatus('synced');
             } catch (err) {
                 console.error('Firebase delete error:', err);
@@ -712,9 +732,12 @@
         }
 
         async function loadAllFromFirebase() {
+            const collection = getUserCollection();
+            if (!collection) return false;
+
             try {
                 updateSyncStatus('syncing');
-                const snapshot = await db.collection('trainingData').get();
+                const snapshot = await collection.get();
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     localStorage.setItem(doc.id, data.value);
@@ -730,7 +753,10 @@
 
         // Listen for real-time updates
         function setupRealtimeSync() {
-            db.collection('trainingData').onSnapshot(snapshot => {
+            const collection = getUserCollection();
+            if (!collection) return;
+
+            collection.onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
                     if (change.type === 'added' || change.type === 'modified') {
                         const data = change.doc.data();
@@ -1413,17 +1439,35 @@
 
         // Initialize
         async function init() {
-            // Load data from Firebase first
-            await loadAllFromFirebase();
+            // Authenticate first
+            try {
+                updateSyncStatus('syncing');
 
-            // Update race date from synced data
-            const savedRaceDateFromSync = localStorage.getItem('raceDate');
-            if (savedRaceDateFromSync) {
-                RACE_DATE = new Date(JSON.parse(savedRaceDateFromSync));
+                // Sign in anonymously (persists across sessions)
+                let user = auth.currentUser;
+                if (!user) {
+                    const result = await auth.signInAnonymously();
+                    user = result.user;
+                }
+                currentUserId = user.uid;
+                console.log('Authenticated as:', currentUserId);
+
+                // Load data from Firebase
+                await loadAllFromFirebase();
+
+                // Update race date from synced data
+                const savedRaceDateFromSync = localStorage.getItem('raceDate');
+                if (savedRaceDateFromSync) {
+                    RACE_DATE = new Date(JSON.parse(savedRaceDateFromSync));
+                }
+
+                // Set up real-time sync
+                setupRealtimeSync();
+                updateSyncStatus('synced');
+            } catch (err) {
+                console.error('Authentication error:', err);
+                updateSyncStatus('offline');
             }
-
-            // Set up real-time sync
-            setupRealtimeSync();
 
             // Render UI
             initRaceDateInput();
@@ -1433,6 +1477,13 @@
             updateProgress();
             setInterval(updateCountdown, 60000);
         }
+
+        // Listen for auth state changes
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUserId = user.uid;
+            }
+        });
 
         init();
     </script>
