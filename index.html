@@ -891,9 +891,14 @@
         }
 
         // Race date configuration
+        // Use noon to avoid timezone issues
+        function parseLocalDate(dateStr) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(year, month - 1, day, 12, 0, 0);
+        }
         const savedRaceDate = localStorage.getItem('raceDate');
-        let RACE_DATE = savedRaceDate ? new Date(savedRaceDate) : new Date('2026-07-25');
-        const START_DATE = new Date('2026-02-17'); // Week 1 start
+        let RACE_DATE = savedRaceDate ? parseLocalDate(savedRaceDate) : parseLocalDate('2026-07-25');
+        const START_DATE = parseLocalDate('2026-02-17'); // Week 1 start
 
         function updateRaceDate() {
             if (!requireLogin('update the race date')) {
@@ -902,7 +907,7 @@
             }
             const newDate = document.getElementById('raceDateInput').value;
             if (newDate) {
-                RACE_DATE = new Date(newDate);
+                RACE_DATE = parseLocalDate(newDate);
                 localStorage.setItem('raceDate', newDate);
                 saveToFirebase('raceDate', newDate);
                 updateCountdown();
@@ -1500,7 +1505,7 @@
                     // Restore race date
                     if (data.raceDate) {
                         localStorage.setItem('raceDate', data.raceDate);
-                        RACE_DATE = new Date(data.raceDate);
+                        RACE_DATE = parseLocalDate(data.raceDate);
                         initRaceDateInput();
                     }
 
@@ -1553,7 +1558,7 @@
                 await deleteFromFirebase(key);
             }
 
-            RACE_DATE = new Date('2026-07-25');
+            RACE_DATE = parseLocalDate('2026-07-25');
             initRaceDateInput();
             updateCountdown();
             renderWorkouts();
@@ -1666,9 +1671,10 @@
             const savedRaceDateFromSync = localStorage.getItem('raceDate');
             if (savedRaceDateFromSync) {
                 try {
-                    RACE_DATE = new Date(JSON.parse(savedRaceDateFromSync));
+                    const dateStr = JSON.parse(savedRaceDateFromSync);
+                    RACE_DATE = parseLocalDate(dateStr);
                 } catch (e) {
-                    RACE_DATE = new Date(savedRaceDateFromSync);
+                    RACE_DATE = parseLocalDate(savedRaceDateFromSync);
                 }
             }
 
