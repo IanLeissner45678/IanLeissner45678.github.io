@@ -412,6 +412,88 @@
             color: #721c24;
         }
 
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .auth-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .auth-box h2 {
+            color: #0070C0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .auth-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .auth-box input:focus {
+            border-color: #0070C0;
+            outline: none;
+        }
+
+        .auth-box .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 1em;
+        }
+
+        .auth-box .toggle-auth {
+            text-align: center;
+            margin-top: 15px;
+            color: #6c757d;
+        }
+
+        .auth-box .toggle-auth a {
+            color: #0070C0;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .auth-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .user-info {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.85em;
+        }
+
+        .user-info a {
+            color: white;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
         @media (max-width: 768px) {
             .workout-details {
                 grid-template-columns: 1fr;
@@ -440,10 +522,25 @@
     <script src="config.js"></script>
 </head>
 <body>
+    <!-- Auth Modal -->
+    <div id="authContainer" class="auth-container" style="display: none;">
+        <div class="auth-box">
+            <h2 id="authTitle">Sign In</h2>
+            <div id="authError" class="auth-error"></div>
+            <input type="email" id="authEmail" placeholder="Email address">
+            <input type="password" id="authPassword" placeholder="Password">
+            <button class="btn btn-primary" id="authSubmit" onclick="handleAuth()">Sign In</button>
+            <div class="toggle-auth">
+                <span id="authToggleText">Don't have an account?</span>
+                <a id="authToggleLink" onclick="toggleAuthMode()">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🏊‍♂️🚴‍♂️🏃‍♂️ IRONMAN 70.3 TRAINING DASHBOARD</h1>
-            <p>Athlete: Ian | 170 lbs | Goal: Sub-6 Hours | <span id="syncIndicator" style="font-size: 0.85em;">✓ Synced</span></p>
+            <p>Athlete: Ian | 170 lbs | Goal: Sub-6 Hours | <span id="syncIndicator" style="font-size: 0.85em;">✓ Synced</span> <span id="userInfo" class="user-info"></span></p>
             <div class="race-countdown" id="countdown"></div>
             <div style="margin-top: 15px;">
                 <label style="font-size: 0.9em;">Race Date: </label>
@@ -1427,37 +1524,110 @@
             alert('All data cleared.');
         }
 
-        // Initialize
-        async function init() {
-            // Authenticate first
-            try {
-                updateSyncStatus('syncing');
+        // Auth mode state
+        let isSignUpMode = false;
 
-                // Sign in anonymously (persists across sessions)
-                let user = auth.currentUser;
-                if (!user) {
-                    const result = await auth.signInAnonymously();
-                    user = result.user;
-                }
-                currentUserId = user.uid;
-                console.log('Authenticated as:', currentUserId);
+        function showAuthModal() {
+            document.getElementById('authContainer').style.display = 'flex';
+        }
 
-                // Load data from Firebase
-                await loadAllFromFirebase();
+        function hideAuthModal() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('authError').style.display = 'none';
+            document.getElementById('authEmail').value = '';
+            document.getElementById('authPassword').value = '';
+        }
 
-                // Update race date from synced data
-                const savedRaceDateFromSync = localStorage.getItem('raceDate');
-                if (savedRaceDateFromSync) {
-                    RACE_DATE = new Date(JSON.parse(savedRaceDateFromSync));
-                }
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            document.getElementById('authTitle').textContent = isSignUpMode ? 'Create Account' : 'Sign In';
+            document.getElementById('authSubmit').textContent = isSignUpMode ? 'Sign Up' : 'Sign In';
+            document.getElementById('authToggleText').textContent = isSignUpMode ? 'Already have an account?' : "Don't have an account?";
+            document.getElementById('authToggleLink').textContent = isSignUpMode ? 'Sign In' : 'Sign Up';
+            document.getElementById('authError').style.display = 'none';
+        }
 
-                // Set up real-time sync
-                setupRealtimeSync();
-                updateSyncStatus('synced');
-            } catch (err) {
-                console.error('Authentication error:', err);
-                updateSyncStatus('offline');
+        function showAuthError(message) {
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+
+            if (!email || !password) {
+                showAuthError('Please enter email and password');
+                return;
             }
+
+            if (password.length < 6) {
+                showAuthError('Password must be at least 6 characters');
+                return;
+            }
+
+            try {
+                if (isSignUpMode) {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+                hideAuthModal();
+            } catch (err) {
+                console.error('Auth error:', err);
+                let message = err.message;
+                if (err.code === 'auth/user-not-found') {
+                    message = 'No account found with this email. Sign up instead?';
+                } else if (err.code === 'auth/wrong-password') {
+                    message = 'Incorrect password';
+                } else if (err.code === 'auth/email-already-in-use') {
+                    message = 'An account with this email already exists. Sign in instead?';
+                } else if (err.code === 'auth/invalid-email') {
+                    message = 'Invalid email address';
+                }
+                showAuthError(message);
+            }
+        }
+
+        async function signOut() {
+            if (confirm('Sign out? Your data will remain synced.')) {
+                await auth.signOut();
+            }
+        }
+
+        function updateUserInfo(user) {
+            const userInfoEl = document.getElementById('userInfo');
+            if (user && user.email) {
+                userInfoEl.innerHTML = `| ${user.email} (<a onclick="signOut()">Sign Out</a>)`;
+            } else {
+                userInfoEl.innerHTML = '';
+            }
+        }
+
+        // Initialize app after auth
+        async function initApp(user) {
+            currentUserId = user.uid;
+            console.log('Authenticated as:', currentUserId, user.email || '(anonymous)');
+
+            updateSyncStatus('syncing');
+
+            // Load data from Firebase
+            await loadAllFromFirebase();
+
+            // Update race date from synced data
+            const savedRaceDateFromSync = localStorage.getItem('raceDate');
+            if (savedRaceDateFromSync) {
+                try {
+                    RACE_DATE = new Date(JSON.parse(savedRaceDateFromSync));
+                } catch (e) {
+                    RACE_DATE = new Date(savedRaceDateFromSync);
+                }
+            }
+
+            // Set up real-time sync
+            setupRealtimeSync();
+            updateSyncStatus('synced');
 
             // Render UI
             initRaceDateInput();
@@ -1465,17 +1635,25 @@
             renderWorkouts();
             renderNutrition();
             updateProgress();
-            setInterval(updateCountdown, 60000);
         }
 
         // Listen for auth state changes
-        auth.onAuthStateChanged(user => {
+        auth.onAuthStateChanged(async user => {
             if (user) {
-                currentUserId = user.uid;
+                hideAuthModal();
+                updateUserInfo(user);
+                await initApp(user);
+            } else {
+                // No user signed in - show login modal
+                showAuthModal();
+                updateUserInfo(null);
             }
         });
 
-        init();
+        // Initial render (will show loading until auth resolves)
+        updateCountdown();
+        renderNutrition();
+        setInterval(updateCountdown, 60000);
     </script>
 </body>
 </html>
