@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IM 70.3 Training Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0070C0 0%, #4472C4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .race-countdown {
+            font-size: 1.2em;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            font-size: 1em;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: white;
+            color: #0070C0;
+            border-bottom: 3px solid #0070C0;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .week-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .week-header h2 {
+            margin-bottom: 10px;
+        }
+
+        .workout-card {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .workout-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .workout-card.double-day {
+            border-left: 5px solid #FF6B6B;
+        }
+
+        .workout-card.long-day {
+            border-left: 5px solid #FFB347;
+        }
+
+        .workout-card.completed {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .workout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .workout-day {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #0070C0;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-double {
+            background: #FF6B6B;
+        }
+
+        .badge-long {
+            background: #FFB347;
+        }
+
+        .badge-completed {
+            background: #28a745;
+        }
+
+        .workout-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .workout-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #0070C0;
+        }
+
+        .workout-type {
+            font-weight: bold;
+            color: #0070C0;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .workout-prescription {
+            color: #495057;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        .workout-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .workout-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #0070C0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #005a9e;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.85em;
+        }
+
+        .logged-data {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .edit-mode {
+            background: #fff8dc !important;
+            border: 2px dashed #ffc107 !important;
+        }
+
+        .edit-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .edit-form input, .edit-form select, .edit-form textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        .edit-form textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .edit-form label {
+            font-weight: 600;
+            color: #495057;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: #e0a800;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #0070C0;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .nutrition-day {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .nutrition-header {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #0070C0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .meal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .meal-row:last-child {
+            border-bottom: none;
+        }
+
+        .meal-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .meal-food {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .meal-calories {
+            font-weight: bold;
+            color: #0070C0;
+        }
+
+        .totals-bar {
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .total-item {
+            flex: 1;
+        }
+
+        .total-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .total-value {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border: 1px solid #dc3545;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .workout-details {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏊‍♂️🚴‍♂️🏃‍♂️ IRONMAN 70.3 TRAINING DASHBOARD</h1>
+            <p>Athlete: Ian | 170 lbs | Goal: Sub-6 Hours</p>
+            <div class="race-countdown" id="countdown"></div>
+            <div style="margin-top: 15px;">
+                <label style="font-size: 0.9em;">Race Date: </label>
+                <input type="date" id="raceDateInput" onchange="updateRaceDate()" style="padding: 8px; border-radius: 5px; border: none; font-size: 1em;">
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('workouts')">🏋️ This Week</button>
+            <button class="tab" onclick="showTab('nutrition')">🍽️ Nutrition</button>
+            <button class="tab" onclick="showTab('progress')">📊 Progress</button>
+            <button class="tab" onclick="showTab('plan')">📅 Full Plan</button>
+        </div>
+
+        <div id="workouts" class="tab-content active">
+            <div class="week-header">
+                <h2 id="weekTitle">Week 1 - Base Building</h2>
+                <p id="weekDates">February 17-23, 2026</p>
+                <p style="margin-top: 10px; font-size: 0.95em;">Focus: Building aerobic base, establishing consistency, practicing nutrition</p>
+            </div>
+
+            <div class="alert alert-info">
+                💡 <strong>Tip:</strong> Log your workouts as you complete them to track progress. Click the workout to expand and enter your data!
+            </div>
+
+            <div id="workoutsList"></div>
+        </div>
+
+        <div id="nutrition" class="tab-content">
+            <div class="alert alert-warning">
+                <strong>📊 Daily Targets:</strong> Training days: 2,700-3,200 cal | Recovery days: 2,400-2,600 cal | Long workout days: 3,000-3,200+ cal
+            </div>
+
+            <div class="alert alert-danger">
+                <strong>⚠️ DIETARY NOTE:</strong> No nut butters in this plan. Using avocado, hummus, cream cheese, honey/jam instead. Peanut allergy - avoid all peanuts.
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h3 style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border-radius: 8px;" onclick="toggleShopping()">
+                    🛒 Weekly Shopping List
+                    <span id="shoppingToggle">▼</span>
+                </h3>
+                <div id="shoppingList" style="display: none; padding: 20px; border: 2px solid #dee2e6; border-top: none; border-radius: 0 0 8px 8px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div>
+                            <h4 style="color: #0070C0; margin-bottom: 10px;">Proteins</h4>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Chicken breasts (3-4 lbs)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Salmon fillets (2-3 lbs)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Turkey breast (1 lb)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Tuna (cans/pouches)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Tofu (1-2 blocks)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Eggs (2 dozen)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Greek yogurt (6-8 containers)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Cottage cheese (2 containers)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> String cheese (2 packages)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Protein powder</label>
+                        </div>
+                        <div>
+                            <h4 style="color: #0070C0; margin-bottom: 10px;">Carbs</h4>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Oatmeal (large container)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Rice (5 lbs)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Quinoa (2 lbs)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Pasta (2-3 boxes)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Whole grain bread (2 loaves)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Bagels (1 package)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Rice cakes (3 packages)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Pancake mix</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Sweet potatoes (6-8)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Crackers (2 boxes)</label>
+                        </div>
+                        <div>
+                            <h4 style="color: #0070C0; margin-bottom: 10px;">Fruits & Vegetables</h4>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Bananas (10-12)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Apples (6-8)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Berries (4 containers)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Avocados (6-8)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Broccoli (2-3 heads)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Asparagus (2 bunches)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Mixed greens/spinach</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Carrots</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Cucumbers</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Bell peppers</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Green beans</label>
+                        </div>
+                        <div>
+                            <h4 style="color: #0070C0; margin-bottom: 10px;">Spreads & Condiments</h4>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> <strong>Hummus (3-4 containers)</strong></label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> <strong>Cream cheese (2 containers)</strong></label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> <strong>Honey</strong></label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> <strong>Jam/Jelly</strong></label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Maple syrup</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Butter</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Olive oil</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Marinara sauce</label>
+                        </div>
+                        <div>
+                            <h4 style="color: #0070C0; margin-bottom: 10px;">Sports Nutrition</h4>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Sports drink mix</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Energy gels (no nut butter!)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Electrolyte tablets</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Recovery drink mix</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Chocolate milk</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Energy bars (verify ingredients)</label>
+                        </div>
+                        <div>
+                            <h4 style="color: #0070C0; margin-bottom: 10px;">Other</h4>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Granola</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Edamame (frozen)</label>
+                            <label style="display: block; margin: 5px 0;"><input type="checkbox"> Cornbread mix</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="nutritionContent"></div>
+        </div>
+
+        <div id="progress" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Your Training Progress</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalWorkouts">0</div>
+                    <div class="stat-label">Workouts Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalMiles">0</div>
+                    <div class="stat-label">Total Miles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalHours">0</div>
+                    <div class="stat-label">Training Hours</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="weeklyVolume">10-12</div>
+                    <div class="stat-label">Hours This Week</div>
+                </div>
+            </div>
+
+            <div id="projectedFinish" style="margin: 30px 0;"></div>
+
+            <div class="alert alert-info">
+                <strong>📈 Weekly Summary:</strong>
+                <div id="weeklySummary" style="margin-top: 10px;">Complete workouts to see your weekly totals!</div>
+            </div>
+
+            <h3 style="margin: 30px 0 15px;">Recent Workouts</h3>
+            <div id="recentWorkouts"></div>
+
+            <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="margin-bottom: 15px;">Backup & Restore</h3>
+                <p style="color: #6c757d; margin-bottom: 15px;">Export your training data to keep a backup, or import from a previous export.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="exportData()">Export Data</button>
+                    <label class="btn btn-success" style="cursor: pointer;">
+                        Import Data
+                        <input type="file" accept=".json" onchange="importData(event)" style="display: none;">
+                    </label>
+                    <button class="btn btn-cancel" onclick="clearAllData()">Clear All Data</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="plan" class="tab-content">
+            <h2 style="margin-bottom: 20px;">22-Week Training Plan Overview</h2>
+
+            <div class="alert alert-info">
+                Your plan automatically progresses each week based on your race date (late July 2026). Current phase: <strong>Base Building</strong>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3>Phase 1: Base Building (Weeks 1-8)</h3>
+                <p style="margin: 10px 0; color: #495057;">Focus: Aerobic endurance, consistency, injury prevention</p>
+                <ul style="margin-left: 20px; color: #6c757d;">
+                    <li>Build run volume from 15 to 25 miles/week</li>
+                    <li>Build long ride from 50 to 70 miles</li>
+                    <li>Maintain swim 8,000-10,000 yards/week</li>
+                    <li>Weekly 90-minute brick sessions</li>
+                    <li>Strength training 2x/week (Tuesday & Thursday)</li>
+                </ul>
+
+                <h3 style="margin-top: 30px;">Phase 2: Build (Weeks 9-16)</h3>
+                <p style="margin: 10px 0; color: #495057;">Focus: Increase intensity, race-specific work, volume peaks</p>
+                <ul style="margin-left: 20px; color: #6c757d;">
+                    <li>Run builds to 30-35 miles/week, long runs to 12-13 miles</li>
+                    <li>Long rides 75-90 miles, add tempo work</li>
+                    <li>Add threshold sets in swim, practice race pace</li>
+                    <li>Brick workouts increase to 2+ hours</li>
+                </ul>
+
+                <h3 style="margin-top: 30px;">Phase 3: Peak (Weeks 17-20)</h3>
+                <p style="margin: 10px 0; color: #495057;">Focus: Race simulation, maximum volume, confidence building</p>
+                <ul style="margin-left: 20px; color: #6c757d;">
+                    <li>Run peaks at 35 miles/week, 13+ mile long runs</li>
+                    <li>90-100 mile rides, full race distance practice</li>
+                    <li>Open water practice, race distance swims</li>
+                    <li>Full race simulation with nutrition protocol</li>
+                </ul>
+
+                <h3 style="margin-top: 30px;">Phase 4: Taper (Weeks 21-22)</h3>
+                <p style="margin: 10px 0; color: #495057;">Focus: Reduce volume 40-60%, maintain intensity, fresh legs</p>
+                <ul style="margin-left: 20px; color: #6c757d;">
+                    <li>Run 15-20 miles/week, short with some intensity</li>
+                    <li>Bike 50-60 miles/week, keep legs sharp</li>
+                    <li>Swim 5,000-6,000 yards/week</li>
+                    <li>Short, snappy brick workouts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Race date configuration
+        const savedRaceDate = localStorage.getItem('raceDate');
+        let RACE_DATE = savedRaceDate ? new Date(savedRaceDate) : new Date('2026-07-25');
+        const START_DATE = new Date('2026-02-17'); // Week 1 start
+
+        function updateRaceDate() {
+            const newDate = document.getElementById('raceDateInput').value;
+            if (newDate) {
+                RACE_DATE = new Date(newDate);
+                localStorage.setItem('raceDate', newDate);
+                updateCountdown();
+            }
+        }
+
+        function initRaceDateInput() {
+            const input = document.getElementById('raceDateInput');
+            const dateStr = RACE_DATE.toISOString().split('T')[0];
+            input.value = dateStr;
+        }
+
+        // Training plan data
+        const weeklyWorkouts = {
+            1: [
+                { day: 'Monday', type: 'Swim', prescription: '2500 yards endurance', duration: 60, distance: 1.4, burn: 450 },
+                { day: 'Tuesday', type: 'Lift + Run', prescription: 'Lift 60min + Run Tempo 60min (10min easy, 40min threshold, 10min cool)', duration: 120, distance: 7, burn: 1100, isDouble: true },
+                { day: 'Wednesday', type: 'Swim + Bike', prescription: 'Swim 2000 yards + Easy bike spin 30min', duration: 75, distance: 1.2, burn: 550 },
+                { day: 'Thursday', type: 'Lift + Run', prescription: 'Lift 60min + Run Easy 45min Zone 2', duration: 105, distance: 5, burn: 900, isDouble: true },
+                { day: 'Friday', type: 'Swim', prescription: '2000 yards technique focus', duration: 45, distance: 1.1, burn: 400 },
+                { day: 'Saturday', type: 'Bike + Brick', prescription: 'Long ride 2:00-2:15 (35-40mi) + 15min brick run', duration: 150, distance: 38, burn: 1800, isLong: true },
+                { day: 'Sunday', type: 'Run', prescription: 'Long run 1:15-1:30 (8-9 miles)', duration: 90, distance: 8.5, burn: 900, isLong: true }
+            ]
+        };
+
+        // Nutrition data
+        const nutritionData = {
+            monday: { breakfast: ['Oatmeal (1.5c) + banana + honey + cinnamon', 650], snack1: ['Rice cakes (2) + hummus + apple', 300], lunch: ['Chicken breast (6oz) + rice (2c) + broccoli', 700], snack2: ['Smoothie: banana, protein powder, Greek yogurt, oats', 400], dinner: ['Salmon (6oz) + rice (1.5c) + asparagus + salad', 750], evening: ['Greek yogurt + berries', 200], burn: 450 },
+            tuesday: { breakfast: ['Oatmeal (1.5c) + berries + honey + protein powder', 700], snack1: ['Greek yogurt (1c) + granola + berries', 350], lunch: ['Turkey sandwich + cheese + salad + fruit + extra carbs', 750], snack2: ['Energy bar + banana', 400], dinner: ['Pasta (2.5c) + chicken (6oz) + marinara + veggies', 950], evening: ['Cottage cheese + fruit + granola', 250], burn: 1100 },
+            wednesday: { breakfast: ['Bagel (1) + cream cheese + banana', 650], snack1: ['Rice cakes (2) + hummus + veggies', 300], lunch: ['Chicken breast (6oz) + quinoa (1.5c) + vegetables', 700], snack2: ['Smoothie: banana, protein powder, Greek yogurt, oats', 400], dinner: ['Grilled chicken (6oz) + quinoa (1.5c) + roasted veggies', 700], evening: ['Greek yogurt + honey', 250], burn: 550 },
+            thursday: { breakfast: ['Scrambled eggs (4) + toast (2) + avocado + fruit', 650], snack1: ['String cheese (2) + crackers + apple', 300], lunch: ['Tuna wrap + hummus + carrots + apple + extra rice side', 700], snack2: ['Smoothie: banana, protein powder, Greek yogurt, oats', 400], dinner: ['Stir-fry: rice (2c) + tofu (6oz) + vegetables + extra rice', 800], evening: ['Greek yogurt + honey + granola', 250], burn: 900 },
+            friday: { breakfast: ['Oatmeal (1c) + berries + honey', 500], snack1: ['Rice cakes (2) + cream cheese + cucumber', 300], lunch: ['Chicken breast (6oz) + rice (2c) + asparagus', 700], snack2: ['Hard-boiled eggs (2) + fruit', 300], dinner: ['Turkey chili (2c) + cornbread + side salad', 700], evening: ['Greek yogurt + honey', 200], burn: 400 },
+            saturday: { breakfast: ['Pancakes (4) + banana + maple syrup + butter', 800], snack1: ['Banana + granola bar', 250], lunch: ['Rice bowl (3c) + salmon (6oz) + edamame + avocado + veggies', 900], snack2: ['Recovery shake + banana (POST RIDE)', 500], dinner: ['Pasta (3c) + chicken (6oz) + marinara + bread', 950], evening: ['Protein shake + fruit', 300], burn: 1800 },
+            sunday: { breakfast: ['Oatmeal (1.5c) + banana + honey + berries', 700], snack1: ['Greek yogurt (1c) + granola + berries', 350], lunch: ['Grilled chicken (6oz) + sweet potato + green beans', 750], snack2: ['Chocolate milk + banana (POST RUN)', 350], dinner: ['Salmon (6oz) + rice (2c) + broccoli + salad', 800], evening: ['Cottage cheese + berries', 200], burn: 900 }
+        };
+
+        function getCurrentWeek() {
+            const now = new Date();
+            const diffTime = now - START_DATE;
+            const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+            return Math.max(1, Math.min(22, diffWeeks + 1));
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = RACE_DATE - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const weeks = Math.floor(days / 7);
+
+            const raceStr = RACE_DATE.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            document.getElementById('countdown').innerHTML = `
+                <strong>RACE DAY: ${raceStr}</strong><br>
+                ${days} days (${weeks} weeks) to go! 🎯
+            `;
+        }
+
+        function renderWorkouts() {
+            const currentWeek = getCurrentWeek();
+            const workouts = weeklyWorkouts[currentWeek] || weeklyWorkouts[1];
+            const container = document.getElementById('workoutsList');
+
+            container.innerHTML = workouts.map((workout, index) => {
+                const saved = getSavedWorkout(currentWeek, index);
+                const edited = getEditedWorkout(currentWeek, index);
+                const currentWorkout = edited || workout;
+                const isCompleted = saved !== null;
+                const isEditing = window.editingWorkout === `${currentWeek}-${index}`;
+
+                return `
+                    <div class="workout-card ${currentWorkout.isDouble ? 'double-day' : ''} ${currentWorkout.isLong ? 'long-day' : ''} ${isCompleted ? 'completed' : ''} ${isEditing ? 'edit-mode' : ''}" id="workout-${index}">
+                        <div class="workout-header">
+                            <div class="workout-day">${currentWorkout.day}</div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                ${currentWorkout.isDouble ? '<span class="badge badge-double">DOUBLE DAY</span>' : ''}
+                                ${currentWorkout.isLong ? '<span class="badge badge-long">LONG WORKOUT</span>' : ''}
+                                ${isCompleted ? '<span class="badge badge-completed">✓ COMPLETED</span>' : ''}
+                                ${edited ? '<span class="badge" style="background: #ffc107; color: #212529;">CUSTOMIZED</span>' : ''}
+                                ${!isEditing ? `<button class="btn btn-edit btn-small" onclick="editWorkout(${currentWeek}, ${index})">✏️ Edit</button>` : ''}
+                            </div>
+                        </div>
+
+                        ${isEditing ? `
+                            <div class="edit-form">
+                                <label>Workout Type:</label>
+                                <select id="edit-type-${index}">
+                                    <option value="Swim" ${currentWorkout.type === 'Swim' ? 'selected' : ''}>🏊‍♂️ Swim</option>
+                                    <option value="Bike" ${currentWorkout.type === 'Bike' ? 'selected' : ''}>🚴‍♂️ Bike</option>
+                                    <option value="Run" ${currentWorkout.type === 'Run' ? 'selected' : ''}>🏃‍♂️ Run</option>
+                                    <option value="Lift + Run" ${currentWorkout.type === 'Lift + Run' ? 'selected' : ''}>🏋️🏃‍♂️ Lift + Run</option>
+                                    <option value="Swim + Bike" ${currentWorkout.type === 'Swim + Bike' ? 'selected' : ''}>🏊‍♂️🚴‍♂️ Swim + Bike</option>
+                                    <option value="Bike + Brick" ${currentWorkout.type === 'Bike + Brick' ? 'selected' : ''}>🚴‍♂️🏃‍♂️ Bike + Brick</option>
+                                </select>
+
+                                <label>Workout Description:</label>
+                                <textarea id="edit-prescription-${index}">${currentWorkout.prescription}</textarea>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label>Target Duration (min):</label>
+                                        <input type="number" id="edit-duration-${index}" value="${currentWorkout.duration}" step="1">
+                                    </div>
+                                    <div>
+                                        <label>Target Distance (miles):</label>
+                                        <input type="number" id="edit-distance-${index}" value="${currentWorkout.distance}" step="0.1">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label>Calories Burned:</label>
+                                        <input type="number" id="edit-burn-${index}" value="${currentWorkout.burn}" step="10">
+                                    </div>
+                                    <div style="padding-top: 32px;">
+                                        <label style="display: inline; margin-right: 10px;">
+                                            <input type="checkbox" id="edit-double-${index}" ${currentWorkout.isDouble ? 'checked' : ''}> Double Day
+                                        </label>
+                                        <label style="display: inline;">
+                                            <input type="checkbox" id="edit-long-${index}" ${currentWorkout.isLong ? 'checked' : ''}> Long Workout
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                    <button class="btn btn-success" onclick="saveEdit(${currentWeek}, ${index})">💾 Save Changes</button>
+                                    <button class="btn btn-cancel" onclick="cancelEdit()">❌ Cancel</button>
+                                    ${edited ? `<button class="btn btn-small" onclick="resetWorkout(${currentWeek}, ${index})" style="background: #dc3545; color: white;">🔄 Reset to Default</button>` : ''}
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="workout-details">
+                                <div class="workout-item">
+                                    <div class="workout-type">
+                                        ${getWorkoutIcon(currentWorkout.type)} ${currentWorkout.type}
+                                    </div>
+                                    <div class="workout-prescription">${currentWorkout.prescription}</div>
+                                    <div style="color: #6c757d; font-size: 0.85em;">
+                                        Target: ${currentWorkout.duration}min | ${currentWorkout.distance} miles | Burn: ${currentWorkout.burn} cal
+                                    </div>
+                                    ${!isCompleted ? `
+                                        <div class="workout-input">
+                                            <input type="number" placeholder="Duration (min)" id="duration-${index}" step="1">
+                                            <input type="number" placeholder="Distance (mi)" id="distance-${index}" step="0.1">
+                                            <button class="btn btn-success btn-small" onclick="logWorkout(${currentWeek}, ${index})">Log It!</button>
+                                        </div>
+                                    ` : `
+                                        <div class="logged-data">
+                                            ✓ Completed: ${saved.duration}min | ${saved.distance}mi | ${saved.pace}/mi
+                                            <button class="btn btn-small" onclick="clearWorkout(${currentWeek}, ${index})" style="margin-left: 10px; background: #dc3545; color: white;">Clear</button>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderNutrition() {
+            const container = document.getElementById('nutritionContent');
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+            container.innerHTML = days.map((day, idx) => {
+                const data = nutritionData[day];
+                const meals = ['breakfast', 'snack1', 'lunch', 'snack2', 'dinner', 'evening'];
+                const mealNames = ['Breakfast', 'Snack 1', 'Lunch', 'Snack 2', 'Dinner', 'Evening Snack'];
+
+                const totalCal = meals.reduce((sum, meal) => sum + data[meal][1], 0);
+                const netCal = totalCal - data.burn;
+
+                return `
+                    <div class="nutrition-day">
+                        <div class="nutrition-header">${dayNames[idx]}</div>
+                        ${meals.map((meal, i) => `
+                            <div class="meal-row">
+                                <div>
+                                    <div class="meal-name">${mealNames[i]}</div>
+                                    <div class="meal-food">${data[meal][0]}</div>
+                                </div>
+                                <div class="meal-calories">${data[meal][1]} cal</div>
+                            </div>
+                        `).join('')}
+                        <div class="totals-bar">
+                            <div class="total-item">
+                                <div class="total-label">Total Eaten</div>
+                                <div class="total-value">${totalCal}</div>
+                            </div>
+                            <div class="total-item">
+                                <div class="total-label">Burned</div>
+                                <div class="total-value">${data.burn}</div>
+                            </div>
+                            <div class="total-item">
+                                <div class="total-label">Net</div>
+                                <div class="total-value">${netCal}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getWorkoutIcon(type) {
+            const icons = {
+                'Swim': '🏊‍♂️',
+                'Bike': '🚴‍♂️',
+                'Run': '🏃‍♂️',
+                'Lift + Run': '🏋️🏃‍♂️',
+                'Swim + Bike': '🏊‍♂️🚴‍♂️',
+                'Bike + Brick': '🚴‍♂️🏃‍♂️'
+            };
+            return icons[type] || '💪';
+        }
+
+        function logWorkout(week, index) {
+            const duration = parseFloat(document.getElementById(`duration-${index}`).value);
+            const distance = parseFloat(document.getElementById(`distance-${index}`).value);
+
+            if (!duration || !distance) {
+                alert('Please enter both duration and distance!');
+                return;
+            }
+
+            const pace = (duration / distance).toFixed(2);
+            const workout = {
+                duration,
+                distance,
+                pace,
+                date: new Date().toISOString()
+            };
+
+            saveWorkout(week, index, workout);
+            renderWorkouts();
+            updateProgress();
+        }
+
+        function clearWorkout(week, index) {
+            if (confirm('Clear this workout?')) {
+                localStorage.removeItem(`workout-${week}-${index}`);
+                renderWorkouts();
+                updateProgress();
+            }
+        }
+
+        function deleteRecentWorkout(week, index) {
+            if (confirm('Delete this workout from your history?')) {
+                localStorage.removeItem(`workout-${week}-${index}`);
+                renderWorkouts();
+                updateProgress();
+            }
+        }
+
+        function saveWorkout(week, index, data) {
+            localStorage.setItem(`workout-${week}-${index}`, JSON.stringify(data));
+        }
+
+        function getSavedWorkout(week, index) {
+            const data = localStorage.getItem(`workout-${week}-${index}`);
+            return data ? JSON.parse(data) : null;
+        }
+
+        function updateProgress() {
+            let totalWorkouts = 0;
+            let totalMiles = 0;
+            let totalMinutes = 0;
+
+            for (let week = 1; week <= 22; week++) {
+                const workouts = weeklyWorkouts[week] || weeklyWorkouts[1];
+                workouts.forEach((_, index) => {
+                    const saved = getSavedWorkout(week, index);
+                    if (saved) {
+                        totalWorkouts++;
+                        totalMiles += saved.distance;
+                        totalMinutes += saved.duration;
+                    }
+                });
+            }
+
+            document.getElementById('totalWorkouts').textContent = totalWorkouts;
+            document.getElementById('totalMiles').textContent = totalMiles.toFixed(1);
+            document.getElementById('totalHours').textContent = (totalMinutes / 60).toFixed(1);
+
+            renderRecentWorkouts();
+            calculateProjectedFinish();
+        }
+
+        function renderRecentWorkouts() {
+            const container = document.getElementById('recentWorkouts');
+            const allWorkouts = [];
+
+            for (let week = 1; week <= 22; week++) {
+                const workouts = weeklyWorkouts[week] || weeklyWorkouts[1];
+                workouts.forEach((workout, index) => {
+                    const saved = getSavedWorkout(week, index);
+                    if (saved) {
+                        const edited = getEditedWorkout(week, index);
+                        const currentWorkout = edited || workout;
+                        allWorkouts.push({
+                            ...currentWorkout,
+                            ...saved,
+                            week,
+                            index
+                        });
+                    }
+                });
+            }
+
+            allWorkouts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const recent = allWorkouts.slice(0, 10);
+
+            if (recent.length === 0) {
+                container.innerHTML = '<p style="color: #6c757d;">No workouts logged yet. Start training!</p>';
+                return;
+            }
+
+            container.innerHTML = recent.map(w => `
+                <div class="workout-card completed" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${w.day} - ${w.type}</strong><br>
+                        ${w.duration}min | ${w.distance}mi | ${w.pace} min/mi<br>
+                        <small style="color: #6c757d;">${new Date(w.date).toLocaleDateString()}</small>
+                    </div>
+                    <button class="btn btn-small" onclick="deleteRecentWorkout(${w.week}, ${w.index})" style="background: #dc3545; color: white;">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Edit workout functions
+        function editWorkout(week, index) {
+            window.editingWorkout = `${week}-${index}`;
+            renderWorkouts();
+        }
+
+        function cancelEdit() {
+            window.editingWorkout = null;
+            renderWorkouts();
+        }
+
+        function saveEdit(week, index) {
+            const workouts = weeklyWorkouts[week] || weeklyWorkouts[1];
+            const originalWorkout = workouts[index];
+
+            const editedWorkout = {
+                day: originalWorkout.day,
+                type: document.getElementById(`edit-type-${index}`).value,
+                prescription: document.getElementById(`edit-prescription-${index}`).value,
+                duration: parseInt(document.getElementById(`edit-duration-${index}`).value),
+                distance: parseFloat(document.getElementById(`edit-distance-${index}`).value),
+                burn: parseInt(document.getElementById(`edit-burn-${index}`).value),
+                isDouble: document.getElementById(`edit-double-${index}`).checked,
+                isLong: document.getElementById(`edit-long-${index}`).checked
+            };
+
+            saveEditedWorkout(week, index, editedWorkout);
+            window.editingWorkout = null;
+            renderWorkouts();
+        }
+
+        function resetWorkout(week, index) {
+            if (confirm('Reset this workout to default settings?')) {
+                localStorage.removeItem(`edited-${week}-${index}`);
+                window.editingWorkout = null;
+                renderWorkouts();
+            }
+        }
+
+        function getEditedWorkout(week, index) {
+            const data = localStorage.getItem(`edited-${week}-${index}`);
+            return data ? JSON.parse(data) : null;
+        }
+
+        function saveEditedWorkout(week, index, data) {
+            localStorage.setItem(`edited-${week}-${index}`, JSON.stringify(data));
+        }
+
+        // Shopping list toggle
+        function toggleShopping() {
+            const list = document.getElementById('shoppingList');
+            const toggle = document.getElementById('shoppingToggle');
+            if (list.style.display === 'none') {
+                list.style.display = 'block';
+                toggle.textContent = '▲';
+            } else {
+                list.style.display = 'none';
+                toggle.textContent = '▼';
+            }
+        }
+
+        // Projected finish time calculator
+        function calculateProjectedFinish() {
+            const swimWorkouts = [];
+            const bikeWorkouts = [];
+            const runWorkouts = [];
+
+            // Gather all logged workouts
+            for (let week = 1; week <= 22; week++) {
+                const workouts = weeklyWorkouts[week] || weeklyWorkouts[1];
+                workouts.forEach((workout, index) => {
+                    const saved = getSavedWorkout(week, index);
+                    if (saved && saved.distance > 0) {
+                        const edited = getEditedWorkout(week, index);
+                        const currentWorkout = edited || workout;
+
+                        if (currentWorkout.type.includes('Swim')) {
+                            swimWorkouts.push({ distance: saved.distance, duration: saved.duration });
+                        }
+                        if (currentWorkout.type.includes('Bike') || currentWorkout.type.includes('brick')) {
+                            bikeWorkouts.push({ distance: saved.distance, duration: saved.duration });
+                        }
+                        if (currentWorkout.type.includes('Run')) {
+                            runWorkouts.push({ distance: saved.distance, duration: saved.duration });
+                        }
+                    }
+                });
+            }
+
+            if (swimWorkouts.length === 0 && bikeWorkouts.length === 0 && runWorkouts.length === 0) {
+                document.getElementById('projectedFinish').innerHTML = `
+                    <div class="alert alert-warning">
+                        <strong>🎯 Projected Finish Time</strong><br>
+                        Log some workouts to see your projected race finish time!
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate average paces
+            const avgSwimPace = swimWorkouts.length > 0
+                ? swimWorkouts.reduce((sum, w) => sum + (w.duration / w.distance), 0) / swimWorkouts.length
+                : 0;
+            const avgBikeSpeed = bikeWorkouts.length > 0
+                ? bikeWorkouts.reduce((sum, w) => sum + (w.distance / (w.duration / 60)), 0) / bikeWorkouts.length
+                : 0;
+            const avgRunPace = runWorkouts.length > 0
+                ? runWorkouts.reduce((sum, w) => sum + (w.duration / w.distance), 0) / runWorkouts.length
+                : 0;
+
+            // Race distances
+            const swimMiles = 1.2;
+            const bikeMiles = 56;
+            const runMiles = 13.1;
+
+            // Calculate projected times (in minutes)
+            const projSwim = avgSwimPace > 0 ? swimMiles * avgSwimPace : 40;
+            const projBike = avgBikeSpeed > 0 ? (bikeMiles / avgBikeSpeed) * 60 : 195;
+            const projRun = avgRunPace > 0 ? runMiles * avgRunPace : 130;
+            const transitions = 8; // Estimated T1 + T2
+
+            const totalMinutes = projSwim + projBike + projRun + transitions;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = Math.floor(totalMinutes % 60);
+
+            const goalMinutes = 6 * 60;
+            const difference = totalMinutes - goalMinutes;
+            const diffHours = Math.floor(Math.abs(difference) / 60);
+            const diffMins = Math.floor(Math.abs(difference) % 60);
+
+            const onPace = totalMinutes <= goalMinutes;
+
+            document.getElementById('projectedFinish').innerHTML = `
+                <div style="background: ${onPace ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : 'linear-gradient(135deg, #ffc107 0%, #ff8800 100%)'}; color: white; padding: 25px; border-radius: 10px;">
+                    <h3 style="margin-bottom: 15px;">🎯 Projected Race Finish Time</h3>
+                    <div style="font-size: 2.5em; font-weight: bold; margin: 15px 0;">${hours}:${minutes.toString().padStart(2, '0')}:00</div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px;">
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Swim (1.2mi)</div>
+                            <div style="font-size: 1.3em; font-weight: bold;">${Math.floor(projSwim)}min</div>
+                            ${avgSwimPace > 0 ? `<div style="font-size: 0.85em;">${avgSwimPace.toFixed(1)} min/mi</div>` : '<div style="font-size: 0.85em;">No data yet</div>'}
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Bike (56mi)</div>
+                            <div style="font-size: 1.3em; font-weight: bold;">${Math.floor(projBike)}min</div>
+                            ${avgBikeSpeed > 0 ? `<div style="font-size: 0.85em;">${avgBikeSpeed.toFixed(1)} mph</div>` : '<div style="font-size: 0.85em;">No data yet</div>'}
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Run (13.1mi)</div>
+                            <div style="font-size: 1.3em; font-weight: bold;">${Math.floor(projRun)}min</div>
+                            ${avgRunPace > 0 ? `<div style="font-size: 0.85em;">${avgRunPace.toFixed(1)} min/mi</div>` : '<div style="font-size: 0.85em;">No data yet</div>'}
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Transitions</div>
+                            <div style="font-size: 1.3em; font-weight: bold;">~8min</div>
+                            <div style="font-size: 0.85em;">T1 + T2</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 15px; background: rgba(255,255,255,0.15); border-radius: 8px; margin-top: 15px;">
+                        <strong>Goal: Sub-6 Hours</strong><br>
+                        ${onPace
+                            ? `✅ You're ${diffHours}h ${diffMins}m UNDER your goal! Keep it up!`
+                            : `⚠️ You're ${diffHours}h ${diffMins}m over goal. Focus on improving your ${projSwim > 45 ? 'swim' : projBike > 210 ? 'bike' : 'run'} times.`
+                        }
+                    </div>
+
+                    <div style="font-size: 0.85em; margin-top: 15px; opacity: 0.9;">
+                        Based on ${swimWorkouts.length} swim${swimWorkouts.length !== 1 ? 's' : ''}, ${bikeWorkouts.length} bike${bikeWorkouts.length !== 1 ? 's' : ''}, ${runWorkouts.length} run${runWorkouts.length !== 1 ? 's' : ''} logged
+                    </div>
+                </div>
+            `;
+        }
+
+        // Export/Import functions
+        function exportData() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                raceDate: localStorage.getItem('raceDate'),
+                workouts: {},
+                editedWorkouts: {}
+            };
+
+            // Gather all workout and edited workout data
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('workout-')) {
+                    data.workouts[key] = JSON.parse(localStorage.getItem(key));
+                } else if (key.startsWith('edited-')) {
+                    data.editedWorkouts[key] = JSON.parse(localStorage.getItem(key));
+                }
+            }
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ironman-training-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (!confirm(`Import backup from ${new Date(data.exportDate).toLocaleDateString()}? This will merge with your existing data.`)) {
+                        return;
+                    }
+
+                    // Restore race date
+                    if (data.raceDate) {
+                        localStorage.setItem('raceDate', data.raceDate);
+                        RACE_DATE = new Date(data.raceDate);
+                        initRaceDateInput();
+                    }
+
+                    // Restore workouts
+                    if (data.workouts) {
+                        Object.entries(data.workouts).forEach(([key, value]) => {
+                            localStorage.setItem(key, JSON.stringify(value));
+                        });
+                    }
+
+                    // Restore edited workouts
+                    if (data.editedWorkouts) {
+                        Object.entries(data.editedWorkouts).forEach(([key, value]) => {
+                            localStorage.setItem(key, JSON.stringify(value));
+                        });
+                    }
+
+                    alert('Data imported successfully!');
+                    updateCountdown();
+                    renderWorkouts();
+                    updateProgress();
+                } catch (err) {
+                    alert('Error importing data: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset file input
+        }
+
+        function clearAllData() {
+            if (!confirm('Are you sure you want to clear ALL training data? This cannot be undone.')) {
+                return;
+            }
+            if (!confirm('Really? This will delete all your logged workouts and customizations.')) {
+                return;
+            }
+
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('workout-') || key.startsWith('edited-') || key === 'raceDate') {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+            RACE_DATE = new Date('2026-07-25');
+            initRaceDateInput();
+            updateCountdown();
+            renderWorkouts();
+            updateProgress();
+            alert('All data cleared.');
+        }
+
+        // Initialize
+        initRaceDateInput();
+        updateCountdown();
+        renderWorkouts();
+        renderNutrition();
+        updateProgress();
+        setInterval(updateCountdown, 60000); // Update countdown every minute
+    </script>
+</body>
+</html>

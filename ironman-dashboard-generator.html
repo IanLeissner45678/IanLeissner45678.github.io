@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ironman 70.3 Training Dashboard Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0070C0 0%, #4472C4 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #0070C0;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .help-text {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #0070C0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #005a9e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,112,192,0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0070C0, #4472C4);
+            transition: width 0.3s;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: #0070C0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card.selected {
+            border-color: #0070C0;
+            background: #e7f3ff;
+        }
+
+        .card h3 {
+            color: #0070C0;
+            margin-bottom: 10px;
+        }
+
+        .step-indicator {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            color: #495057;
+        }
+
+        .step-indicator strong {
+            color: #0070C0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏊‍♂️🚴‍♂️🏃‍♂️ Ironman 70.3 Dashboard Generator</h1>
+            <p>Create your personalized training and nutrition tracker in 5 easy steps</p>
+        </div>
+
+        <div class="content">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 20%"></div>
+            </div>
+
+            <!-- Step 1: Basic Info -->
+            <div class="step active" id="step1">
+                <div class="step-indicator">Step <strong>1</strong> of 5: Basic Information</div>
+
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="athleteName" placeholder="e.g., Alex Johnson" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Bodyweight (lbs)</label>
+                    <input type="number" id="bodyweight" placeholder="e.g., 170" min="100" max="300" required>
+                    <div class="help-text">Used to calculate nutrition targets</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Race Date</label>
+                    <input type="date" id="raceDate" required>
+                    <div class="help-text">When is your Ironman 70.3?</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Race Goal</label>
+                    <select id="raceGoal">
+                        <option value="6:00">Just finish strong</option>
+                        <option value="6:00">Sub-6 hours</option>
+                        <option value="5:30">Sub-5:30 hours</option>
+                        <option value="5:00">Sub-5 hours (competitive)</option>
+                        <option value="4:30">Podium / Worlds qualification</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="nextStep(2)">Next →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Current Fitness -->
+            <div class="step" id="step2">
+                <div class="step-indicator">Step <strong>2</strong> of 5: Current Fitness Level</div>
+
+                <div class="alert alert-info">
+                    Tell us about your current abilities so we can create a proper progression plan.
+                </div>
+
+                <div class="form-group">
+                    <label>Current Run Fitness</label>
+                    <select id="runFitness">
+                        <option value="5">Can run 3-5 miles comfortably</option>
+                        <option value="8">Can run 6-8 miles comfortably</option>
+                        <option value="10">Can run 10+ miles comfortably</option>
+                        <option value="13">Have run a half marathon recently</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Current Bike Fitness</label>
+                    <select id="bikeFitness">
+                        <option value="25">Can ride 20-30 miles comfortably</option>
+                        <option value="45">Can ride 40-50 miles comfortably</option>
+                        <option value="60">Can ride 60+ miles comfortably</option>
+                        <option value="70">Regularly ride 70+ miles</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Current Swim Fitness</label>
+                    <select id="swimFitness">
+                        <option value="1000">Can swim 500-1000 yards continuously</option>
+                        <option value="1500">Can swim 1500-2000 yards continuously</option>
+                        <option value="2500">Can swim 2500+ yards continuously</option>
+                        <option value="3000">Competitive swim background</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Weekly Training Hours Available</label>
+                    <select id="weeklyHours">
+                        <option value="8">8-10 hours/week</option>
+                        <option value="10">10-12 hours/week</option>
+                        <option value="12">12-15 hours/week</option>
+                        <option value="15">15+ hours/week</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(1)">← Back</button>
+                    <button class="btn btn-primary" onclick="nextStep(3)">Next →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Training Preferences -->
+            <div class="step" id="step3">
+                <div class="step-indicator">Step <strong>3</strong> of 5: Training Preferences</div>
+
+                <div class="form-group">
+                    <label>Do you have access to strength training equipment?</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="hasGym" checked> Yes, I can do strength training</label>
+                    </div>
+                    <div class="help-text">We'll include 2x weekly strength sessions if checked</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Which days work best for double workouts?</label>
+                    <div class="help-text" style="margin-bottom: 10px;">Select 2 days for morning strength + evening cardio</div>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="doubleMonday"> Monday</label>
+                        <label><input type="checkbox" id="doubleTuesday" checked> Tuesday</label>
+                        <label><input type="checkbox" id="doubleWednesday"> Wednesday</label>
+                        <label><input type="checkbox" id="doubleThursday" checked> Thursday</label>
+                        <label><input type="checkbox" id="doubleFriday"> Friday</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>What's your long workout day?</label>
+                    <select id="longDay">
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                    <div class="help-text">We'll schedule your long ride + brick workout on this day</div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(2)">← Back</button>
+                    <button class="btn btn-primary" onclick="nextStep(4)">Next →</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Nutrition Preferences -->
+            <div class="step" id="step4">
+                <div class="step-indicator">Step <strong>4</strong> of 5: Nutrition Preferences</div>
+
+                <div class="form-group">
+                    <label>Dietary Restrictions</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="dietVegetarian"> Vegetarian/Plant-based</label>
+                        <label><input type="checkbox" id="dietGlutenFree"> Gluten-free</label>
+                        <label><input type="checkbox" id="dietDairyFree"> Dairy-free</label>
+                        <label><input type="checkbox" id="dietNutAllergy"> Nut allergy</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Which foods do you prefer? (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="foodAvocado" checked> Avocado</label>
+                        <label><input type="checkbox" id="foodHummus" checked> Hummus</label>
+                        <label><input type="checkbox" id="foodCheese" checked> Cheese/Cream cheese</label>
+                        <label><input type="checkbox" id="foodYogurt" checked> Greek yogurt</label>
+                        <label><input type="checkbox" id="foodNutButters"> Nut butters (almond, etc.)</label>
+                        <label><input type="checkbox" id="foodHoney" checked> Honey/Jam</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Additional Dietary Notes (Optional)</label>
+                    <textarea id="dietNotes" placeholder="Any other foods you love or avoid?"></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(3)">← Back</button>
+                    <button class="btn btn-primary" onclick="nextStep(5)">Next →</button>
+                </div>
+            </div>
+
+            <!-- Step 5: Review & Generate -->
+            <div class="step" id="step5">
+                <div class="step-indicator">Step <strong>5</strong> of 5: Review & Generate</div>
+
+                <div class="alert alert-success">
+                    <strong>✨ Almost done!</strong> Review your settings below and click "Generate My Dashboard" to create your personalized training tracker.
+                </div>
+
+                <div id="reviewContent"></div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="prevStep(4)">← Back</button>
+                    <button class="btn btn-success" onclick="generateDashboard()">🎉 Generate My Dashboard!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function nextStep(step) {
+            // Validate current step
+            if (step === 2) {
+                const name = document.getElementById('athleteName').value;
+                const weight = document.getElementById('bodyweight').value;
+                const date = document.getElementById('raceDate').value;
+
+                if (!name || !weight || !date) {
+                    alert('Please fill in all required fields!');
+                    return;
+                }
+            }
+
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+
+            // Show target step
+            document.getElementById('step' + step).classList.add('active');
+
+            // Update progress bar
+            const progress = (step / 5) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            // If step 5, show review
+            if (step === 5) {
+                showReview();
+            }
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function prevStep(step) {
+            nextStep(step);
+        }
+
+        function showReview() {
+            const name = document.getElementById('athleteName').value;
+            const weight = document.getElementById('bodyweight').value;
+            const raceDate = new Date(document.getElementById('raceDate').value);
+            const goal = document.getElementById('raceGoal').options[document.getElementById('raceGoal').selectedIndex].text;
+
+            const runFitness = document.getElementById('runFitness').options[document.getElementById('runFitness').selectedIndex].text;
+            const bikeFitness = document.getElementById('bikeFitness').options[document.getElementById('bikeFitness').selectedIndex].text;
+            const swimFitness = document.getElementById('swimFitness').options[document.getElementById('swimFitness').selectedIndex].text;
+            const weeklyHours = document.getElementById('weeklyHours').options[document.getElementById('weeklyHours').selectedIndex].text;
+
+            const hasGym = document.getElementById('hasGym').checked;
+            const doubleDays = [];
+            ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
+                if (document.getElementById('double' + day).checked) doubleDays.push(day);
+            });
+            const longDay = document.getElementById('longDay').value;
+
+            const restrictions = [];
+            if (document.getElementById('dietVegetarian').checked) restrictions.push('Vegetarian');
+            if (document.getElementById('dietGlutenFree').checked) restrictions.push('Gluten-free');
+            if (document.getElementById('dietDairyFree').checked) restrictions.push('Dairy-free');
+            if (document.getElementById('dietNutAllergy').checked) restrictions.push('Nut allergy');
+
+            const preferredFoods = [];
+            if (document.getElementById('foodAvocado').checked) preferredFoods.push('Avocado');
+            if (document.getElementById('foodHummus').checked) preferredFoods.push('Hummus');
+            if (document.getElementById('foodCheese').checked) preferredFoods.push('Cheese');
+            if (document.getElementById('foodYogurt').checked) preferredFoods.push('Greek yogurt');
+            if (document.getElementById('foodNutButters').checked) preferredFoods.push('Nut butters');
+            if (document.getElementById('foodHoney').checked) preferredFoods.push('Honey/Jam');
+
+            document.getElementById('reviewContent').innerHTML = `
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #0070C0; margin-bottom: 15px;">Your Settings</h3>
+
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Weight:</strong> ${weight} lbs</p>
+                    <p><strong>Race Date:</strong> ${raceDate.toLocaleDateString()}</p>
+                    <p><strong>Goal:</strong> ${goal}</p>
+
+                    <h4 style="color: #0070C0; margin: 20px 0 10px;">Current Fitness</h4>
+                    <p><strong>Run:</strong> ${runFitness}</p>
+                    <p><strong>Bike:</strong> ${bikeFitness}</p>
+                    <p><strong>Swim:</strong> ${swimFitness}</p>
+                    <p><strong>Weekly Hours:</strong> ${weeklyHours}</p>
+
+                    <h4 style="color: #0070C0; margin: 20px 0 10px;">Training Plan</h4>
+                    <p><strong>Strength Training:</strong> ${hasGym ? 'Yes' : 'No'}</p>
+                    <p><strong>Double Workout Days:</strong> ${doubleDays.join(', ') || 'None'}</p>
+                    <p><strong>Long Workout Day:</strong> ${longDay}</p>
+
+                    <h4 style="color: #0070C0; margin: 20px 0 10px;">Nutrition</h4>
+                    <p><strong>Restrictions:</strong> ${restrictions.join(', ') || 'None'}</p>
+                    <p><strong>Preferred Foods:</strong> ${preferredFoods.join(', ')}</p>
+                </div>
+            `;
+        }
+
+        function generateDashboard() {
+            // Show loading state
+            document.querySelector('.btn-success').textContent = '⏳ Generating...';
+            document.querySelector('.btn-success').disabled = true;
+
+            // Collect all data
+            const config = {
+                name: document.getElementById('athleteName').value,
+                weight: parseInt(document.getElementById('bodyweight').value),
+                raceDate: document.getElementById('raceDate').value,
+                goal: document.getElementById('raceGoal').value,
+                runFitness: parseFloat(document.getElementById('runFitness').value),
+                bikeFitness: parseFloat(document.getElementById('bikeFitness').value),
+                swimFitness: parseFloat(document.getElementById('swimFitness').value),
+                weeklyHours: parseFloat(document.getElementById('weeklyHours').value),
+                hasGym: document.getElementById('hasGym').checked,
+                doubleDays: {
+                    monday: document.getElementById('doubleMonday').checked,
+                    tuesday: document.getElementById('doubleTuesday').checked,
+                    wednesday: document.getElementById('doubleWednesday').checked,
+                    thursday: document.getElementById('doubleThursday').checked,
+                    friday: document.getElementById('doubleFriday').checked
+                },
+                longDay: document.getElementById('longDay').value,
+                diet: {
+                    vegetarian: document.getElementById('dietVegetarian').checked,
+                    glutenFree: document.getElementById('dietGlutenFree').checked,
+                    dairyFree: document.getElementById('dietDairyFree').checked,
+                    nutAllergy: document.getElementById('dietNutAllergy').checked
+                },
+                foods: {
+                    avocado: document.getElementById('foodAvocado').checked,
+                    hummus: document.getElementById('foodHummus').checked,
+                    cheese: document.getElementById('foodCheese').checked,
+                    yogurt: document.getElementById('foodYogurt').checked,
+                    nutButters: document.getElementById('foodNutButters').checked,
+                    honey: document.getElementById('foodHoney').checked
+                }
+            };
+
+            // Generate the dashboard HTML
+            generateHTML(config);
+        }
+
+        async function generateHTML(config) {
+            // Check if running from file:// protocol
+            if (window.location.protocol === 'file:') {
+                document.querySelector('.content').innerHTML = `
+                    <div class="alert" style="text-align: center; padding: 40px; background: #fff3cd; border: 1px solid #ffc107;">
+                        <h2 style="color: #856404; margin-bottom: 20px;">⚠️ Local File Limitation</h2>
+                        <p style="font-size: 1.1em; margin-bottom: 20px;">
+                            The generator needs to run from a web server to work properly.<br>
+                            Browsers block file access when opening HTML files directly.
+                        </p>
+                        <div style="background: white; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: left;">
+                            <p style="margin-bottom: 10px;"><strong>Quick fix - run a local server:</strong></p>
+                            <code style="background: #f4f4f4; padding: 10px; display: block; border-radius: 5px; font-family: monospace;">
+                                cd ~/Desktop/Projects/Ironman<br>
+                                python3 -m http.server 8000
+                            </code>
+                            <p style="margin-top: 10px;">Then open: <a href="http://localhost:8000/ironman-dashboard-generator.html" style="color: #0070C0;">http://localhost:8000/ironman-dashboard-generator.html</a></p>
+                        </div>
+                        <button class="btn btn-secondary" onclick="location.reload()">Try Again</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate dates
+            const raceDate = new Date(config.raceDate);
+            const startDate = new Date(raceDate);
+            startDate.setDate(startDate.getDate() - (22 * 7));
+
+            // Build dietary note
+            const dietNotes = [];
+            if (config.diet.vegetarian) dietNotes.push('Vegetarian/plant-based');
+            if (config.diet.glutenFree) dietNotes.push('Gluten-free');
+            if (config.diet.dairyFree) dietNotes.push('Dairy-free');
+            if (config.diet.nutAllergy) dietNotes.push('Nut allergy');
+
+            const preferredFoods = [];
+            if (config.foods.avocado) preferredFoods.push('avocado');
+            if (config.foods.hummus) preferredFoods.push('hummus');
+            if (config.foods.cheese) preferredFoods.push('cream cheese');
+            if (config.foods.honey) preferredFoods.push('honey/jam');
+
+            const dietaryNote = dietNotes.length > 0
+                ? `${dietNotes.join(', ')}. Using ${preferredFoods.join(', ')} for nutrition.`
+                : `Using ${preferredFoods.join(', ')} for nutrition.`;
+
+            // Load the template dashboard
+            let response, dashboardHTML;
+            try {
+                response = await fetch('training-dashboard.html');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                dashboardHTML = await response.text();
+            } catch (error) {
+                document.querySelector('.content').innerHTML = `
+                    <div class="alert" style="text-align: center; padding: 40px; background: #f8d7da; border: 1px solid #f5c6cb;">
+                        <h2 style="color: #721c24; margin-bottom: 20px;">❌ Error Loading Template</h2>
+                        <p style="font-size: 1.1em; margin-bottom: 20px;">
+                            Could not load the training-dashboard.html template file.
+                        </p>
+                        <p style="color: #721c24; font-family: monospace; background: white; padding: 10px; border-radius: 5px;">
+                            ${error.message}
+                        </p>
+                        <p style="margin-top: 20px;">Make sure <strong>training-dashboard.html</strong> is in the same folder as this generator.</p>
+                        <button class="btn btn-secondary" style="margin-top: 20px;" onclick="location.reload()">Try Again</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Do replacements
+            dashboardHTML = dashboardHTML.replace(
+                "const RACE_DATE = new Date('2026-07-25');",
+                `const RACE_DATE = new Date('${config.raceDate}');`
+            );
+
+            dashboardHTML = dashboardHTML.replace(
+                "const START_DATE = new Date('2026-02-17');",
+                `const START_DATE = new Date('${startDate.toISOString().split('T')[0]}');`
+            );
+
+            dashboardHTML = dashboardHTML.replace(
+                "Athlete: Ian | 170 lbs | Goal: Sub-6 Hours",
+                `Athlete: ${config.name} | ${config.weight} lbs | Goal: Sub-${config.goal}`
+            );
+
+            dashboardHTML = dashboardHTML.replace(
+                "<title>IM 70.3 Training Dashboard</title>",
+                `<title>${config.name}'s IM 70.3 Training Dashboard</title>`
+            );
+
+            dashboardHTML = dashboardHTML.replace(
+                "No nut butters in this plan. Using avocado, hummus, cream cheese, honey/jam instead. Peanut allergy - avoid all peanuts.",
+                dietaryNote
+            );
+
+            // Create a blob and open it
+            const blob = new Blob([dashboardHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+
+            // Show loading message
+            document.querySelector('.content').innerHTML = `
+                <div class="alert alert-success" style="text-align: center; padding: 60px;">
+                    <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Dashboard Created!</h2>
+                    <p style="font-size: 1.3em; margin-bottom: 30px;">Opening your personalized training dashboard...</p>
+                    <div style="font-size: 3em; margin: 20px 0;">⏳</div>
+                    <p style="color: #6c757d;">If it doesn't open automatically, <a href="${url}" target="_blank" style="color: #0070C0; font-weight: bold;">click here</a></p>
+                </div>
+            `;
+
+            // Open in new tab
+            setTimeout(() => {
+                window.open(url, '_blank');
+            }, 1000);
+
+            // Also offer download
+            setTimeout(() => {
+                document.querySelector('.content').innerHTML = `
+                    <div class="alert alert-success" style="text-align: center; padding: 40px;">
+                        <h2 style="color: #28a745; margin-bottom: 20px;">✅ Dashboard Opened!</h2>
+                        <p style="font-size: 1.2em; margin-bottom: 20px;">Your dashboard should be open in a new tab.</p>
+
+                        <div style="background: white; border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin: 20px 0;">
+                            <p style="margin-bottom: 15px;">
+                                <strong>Next Steps:</strong><br>
+                                1. Bookmark your dashboard for easy access<br>
+                                2. Start logging your workouts<br>
+                                3. Track your progress to sub-${config.goal}!
+                            </p>
+                        </div>
+
+                        <div style="margin-top: 30px;">
+                            <a href="${url}" target="_blank" class="btn btn-primary" style="text-decoration: none; display: inline-block; margin: 10px;">
+                                🔗 Open Dashboard Again
+                            </a>
+                            <button class="btn btn-secondary" style="margin: 10px;" onclick="location.reload()">
+                                Create Another Dashboard
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
