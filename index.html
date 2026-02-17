@@ -540,7 +540,7 @@
     <div class="container">
         <div class="header">
             <h1>🏊‍♂️🚴‍♂️🏃‍♂️ IRONMAN 70.3 TRAINING DASHBOARD</h1>
-            <p>Athlete: Ian | 170 lbs | Goal: Sub-6 Hours | <span id="syncIndicator" style="font-size: 0.85em;">✓ Synced</span> <span id="userInfo" class="user-info"></span></p>
+            <p>Athlete: Ian | 170 lbs | Goal: Sub-6 Hours | <span id="syncIndicator" style="font-size: 0.85em;">✓ Synced</span> <span id="userInfo" class="user-info"></span> <button id="signInBtn" class="btn btn-small" onclick="showAuthModal()" style="background: rgba(255,255,255,0.2); color: white; display: none;">Sign In</button></p>
             <div class="race-countdown" id="countdown"></div>
             <div style="margin-top: 15px;">
                 <label style="font-size: 0.9em;">Race Date: </label>
@@ -760,6 +760,10 @@
 
         // Current user ID (set after authentication)
         let currentUserId = null;
+        let isLoggedIn = false;
+
+        // Default public user ID for read-only access (your user ID)
+        const PUBLIC_USER_ID = 'PUBLIC_OWNER_ID'; // Will be set to your actual UID
 
         // Sync status indicator
         let syncStatus = 'synced';
@@ -780,17 +784,35 @@
             }
         }
 
-        // Get user's data collection path
+        // Get data collection path - uses public collection for shared access
         function getUserCollection() {
-            if (!currentUserId) {
-                console.error('No user authenticated');
-                return null;
+            // Use a shared public collection so anyone can read
+            return db.collection('publicTrainingData');
+        }
+
+        // Check if user can write (is logged in)
+        function canWrite() {
+            return isLoggedIn && currentUserId;
+        }
+
+        // Require login for write operations
+        function requireLogin(action) {
+            if (!canWrite()) {
+                if (confirm(`You need to sign in to ${action}. Sign in now?`)) {
+                    showAuthModal();
+                }
+                return false;
             }
-            return db.collection('users').doc(currentUserId).collection('trainingData');
+            return true;
         }
 
         // Firebase data functions
         async function saveToFirebase(key, data) {
+            if (!canWrite()) {
+                console.log('Not logged in, skipping Firebase save');
+                return;
+            }
+
             const collection = getUserCollection();
             if (!collection) return;
 
@@ -805,6 +827,11 @@
         }
 
         async function deleteFromFirebase(key) {
+            if (!canWrite()) {
+                console.log('Not logged in, skipping Firebase delete');
+                return;
+            }
+
             const collection = getUserCollection();
             if (!collection) return;
 
@@ -869,6 +896,10 @@
         const START_DATE = new Date('2026-02-17'); // Week 1 start
 
         function updateRaceDate() {
+            if (!requireLogin('update the race date')) {
+                initRaceDateInput(); // Reset to current value
+                return;
+            }
             const newDate = document.getElementById('raceDateInput').value;
             if (newDate) {
                 RACE_DATE = new Date(newDate);
@@ -1087,6 +1118,8 @@
         }
 
         function logWorkout(week, index) {
+            if (!requireLogin('log a workout')) return;
+
             const duration = parseFloat(document.getElementById(`duration-${index}`).value);
             const distance = parseFloat(document.getElementById(`distance-${index}`).value);
 
@@ -1118,6 +1151,7 @@
         }
 
         function clearWorkout(week, index) {
+            if (!requireLogin('clear a workout')) return;
             if (confirm('Clear this workout?')) {
                 const key = `workout-${week}-${index}`;
                 localStorage.removeItem(key);
@@ -1128,6 +1162,7 @@
         }
 
         function deleteRecentWorkout(week, index) {
+            if (!requireLogin('delete a workout')) return;
             if (confirm('Delete this workout from your history?')) {
                 const key = `workout-${week}-${index}`;
                 localStorage.removeItem(key);
@@ -1234,6 +1269,7 @@
 
         // Edit workout functions
         function editWorkout(week, index) {
+            if (!requireLogin('edit a workout')) return;
             window.editingWorkout = `${week}-${index}`;
             renderWorkouts();
         }
@@ -1495,6 +1531,7 @@
         }
 
         async function clearAllData() {
+            if (!requireLogin('clear all data')) return;
             if (!confirm('Are you sure you want to clear ALL training data? This cannot be undone.')) {
                 return;
             }
@@ -1598,21 +1635,31 @@
 
         function updateUserInfo(user) {
             const userInfoEl = document.getElementById('userInfo');
+            const signInBtn = document.getElementById('signInBtn');
             if (user && user.email) {
                 userInfoEl.innerHTML = `| ${user.email} (<a onclick="signOut()">Sign Out</a>)`;
+                signInBtn.style.display = 'none';
             } else {
                 userInfoEl.innerHTML = '';
+                signInBtn.style.display = 'inline-block';
             }
         }
 
-        // Initialize app after auth
+        // Initialize app - works with or without login
         async function initApp(user) {
-            currentUserId = user.uid;
-            console.log('Authenticated as:', currentUserId, user.email || '(anonymous)');
+            if (user) {
+                currentUserId = user.uid;
+                isLoggedIn = true;
+                console.log('Authenticated as:', currentUserId, user.email || '(anonymous)');
+            } else {
+                currentUserId = null;
+                isLoggedIn = false;
+                console.log('Viewing in read-only mode');
+            }
 
             updateSyncStatus('syncing');
 
-            // Load data from Firebase
+            // Load data from Firebase (works for everyone - read access)
             await loadAllFromFirebase();
 
             // Update race date from synced data
@@ -1639,20 +1686,12 @@
 
         // Listen for auth state changes
         auth.onAuthStateChanged(async user => {
-            if (user) {
-                hideAuthModal();
-                updateUserInfo(user);
-                await initApp(user);
-            } else {
-                // No user signed in - show login modal
-                showAuthModal();
-                updateUserInfo(null);
-            }
+            hideAuthModal();
+            updateUserInfo(user);
+            await initApp(user);
         });
 
-        // Initial render (will show loading until auth resolves)
-        updateCountdown();
-        renderNutrition();
+        // Initial render
         setInterval(updateCountdown, 60000);
     </script>
 </body>
