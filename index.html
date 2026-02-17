@@ -437,6 +437,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -655,18 +656,7 @@
     </div>
 
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAT9H-bG52EBC1NNVtdAKIgu1KysDH3i04",
-            authDomain: "ironman-70-3.firebaseapp.com",
-            projectId: "ironman-70-3",
-            storageBucket: "ironman-70-3.firebasestorage.app",
-            messagingSenderId: "140837961020",
-            appId: "1:140837961020:web:af87b45d463ce78e417239",
-            measurementId: "G-NN3EGZ3NKB"
-        };
-
-        // Initialize Firebase
+        // Initialize Firebase (config loaded from config.js)
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
