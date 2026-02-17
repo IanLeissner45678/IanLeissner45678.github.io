@@ -982,8 +982,17 @@
                 return;
             }
 
+            // Get the current workout info (edited or original) to include type/prescription
+            const workouts = weeklyWorkouts[getCurrentWeek()] || weeklyWorkouts[1];
+            const originalWorkout = workouts[index];
+            const edited = getEditedWorkout(week, index);
+            const currentWorkout = edited || originalWorkout;
+
             const pace = (duration / distance).toFixed(2);
             const workout = {
+                day: currentWorkout.day,
+                type: currentWorkout.type,
+                prescription: currentWorkout.prescription,
                 duration,
                 distance,
                 pace,
@@ -1060,14 +1069,24 @@
                 workouts.forEach((workout, index) => {
                     const saved = getSavedWorkout(week, index);
                     if (saved) {
-                        const edited = getEditedWorkout(week, index);
-                        const currentWorkout = edited || workout;
-                        allWorkouts.push({
-                            ...currentWorkout,
-                            ...saved,
-                            week,
-                            index
-                        });
+                        // Use saved data directly if it has type info, otherwise fall back to edited/original
+                        if (saved.type) {
+                            allWorkouts.push({
+                                ...saved,
+                                week,
+                                index
+                            });
+                        } else {
+                            // Legacy: older saved workouts without type info
+                            const edited = getEditedWorkout(week, index);
+                            const currentWorkout = edited || workout;
+                            allWorkouts.push({
+                                ...currentWorkout,
+                                ...saved,
+                                week,
+                                index
+                            });
+                        }
                     }
                 });
             }
@@ -1177,16 +1196,23 @@
                 workouts.forEach((workout, index) => {
                     const saved = getSavedWorkout(week, index);
                     if (saved && saved.distance > 0) {
-                        const edited = getEditedWorkout(week, index);
-                        const currentWorkout = edited || workout;
+                        // Use saved type if available, otherwise fall back to edited/original
+                        let workoutType;
+                        if (saved.type) {
+                            workoutType = saved.type;
+                        } else {
+                            const edited = getEditedWorkout(week, index);
+                            const currentWorkout = edited || workout;
+                            workoutType = currentWorkout.type;
+                        }
 
-                        if (currentWorkout.type.includes('Swim')) {
+                        if (workoutType.includes('Swim')) {
                             swimWorkouts.push({ distance: saved.distance, duration: saved.duration });
                         }
-                        if (currentWorkout.type.includes('Bike') || currentWorkout.type.includes('brick')) {
+                        if (workoutType.includes('Bike') || workoutType.includes('brick')) {
                             bikeWorkouts.push({ distance: saved.distance, duration: saved.duration });
                         }
-                        if (currentWorkout.type.includes('Run')) {
+                        if (workoutType.includes('Run')) {
                             runWorkouts.push({ distance: saved.distance, duration: saved.duration });
                         }
                     }
