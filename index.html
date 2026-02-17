@@ -434,12 +434,14 @@
             }
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🏊‍♂️🚴‍♂️🏃‍♂️ IRONMAN 70.3 TRAINING DASHBOARD</h1>
-            <p>Athlete: Ian | 170 lbs | Goal: Sub-6 Hours</p>
+            <p>Athlete: Ian | 170 lbs | Goal: Sub-6 Hours | <span id="syncIndicator" style="font-size: 0.85em;">✓ Synced</span></p>
             <div class="race-countdown" id="countdown"></div>
             <div style="margin-top: 15px;">
                 <label style="font-size: 0.9em;">Race Date: </label>
@@ -652,6 +654,102 @@
     </div>
 
     <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAT9H-bG52EBC1NNVtdAKIgu1KysDH3i04",
+            authDomain: "ironman-70-3.firebaseapp.com",
+            projectId: "ironman-70-3",
+            storageBucket: "ironman-70-3.firebasestorage.app",
+            messagingSenderId: "140837961020",
+            appId: "1:140837961020:web:af87b45d463ce78e417239",
+            measurementId: "G-NN3EGZ3NKB"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Sync status indicator
+        let syncStatus = 'synced';
+        function updateSyncStatus(status) {
+            syncStatus = status;
+            const indicator = document.getElementById('syncIndicator');
+            if (indicator) {
+                if (status === 'syncing') {
+                    indicator.innerHTML = '🔄 Syncing...';
+                    indicator.style.color = '#ffc107';
+                } else if (status === 'synced') {
+                    indicator.innerHTML = '✓ Synced';
+                    indicator.style.color = '#28a745';
+                } else if (status === 'offline') {
+                    indicator.innerHTML = '⚠️ Offline';
+                    indicator.style.color = '#dc3545';
+                }
+            }
+        }
+
+        // Firebase data functions
+        async function saveToFirebase(key, data) {
+            try {
+                updateSyncStatus('syncing');
+                await db.collection('trainingData').doc(key).set({ value: JSON.stringify(data) });
+                updateSyncStatus('synced');
+            } catch (err) {
+                console.error('Firebase save error:', err);
+                updateSyncStatus('offline');
+            }
+        }
+
+        async function deleteFromFirebase(key) {
+            try {
+                updateSyncStatus('syncing');
+                await db.collection('trainingData').doc(key).delete();
+                updateSyncStatus('synced');
+            } catch (err) {
+                console.error('Firebase delete error:', err);
+                updateSyncStatus('offline');
+            }
+        }
+
+        async function loadAllFromFirebase() {
+            try {
+                updateSyncStatus('syncing');
+                const snapshot = await db.collection('trainingData').get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    localStorage.setItem(doc.id, data.value);
+                });
+                updateSyncStatus('synced');
+                return true;
+            } catch (err) {
+                console.error('Firebase load error:', err);
+                updateSyncStatus('offline');
+                return false;
+            }
+        }
+
+        // Listen for real-time updates
+        function setupRealtimeSync() {
+            db.collection('trainingData').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data();
+                        localStorage.setItem(change.doc.id, data.value);
+                    } else if (change.type === 'removed') {
+                        localStorage.removeItem(change.doc.id);
+                    }
+                });
+                // Re-render after sync
+                renderWorkouts();
+                updateProgress();
+                initRaceDateInput();
+                updateCountdown();
+            }, err => {
+                console.error('Realtime sync error:', err);
+                updateSyncStatus('offline');
+            });
+        }
+
         // Race date configuration
         const savedRaceDate = localStorage.getItem('raceDate');
         let RACE_DATE = savedRaceDate ? new Date(savedRaceDate) : new Date('2026-07-25');
@@ -662,6 +760,7 @@
             if (newDate) {
                 RACE_DATE = new Date(newDate);
                 localStorage.setItem('raceDate', newDate);
+                saveToFirebase('raceDate', newDate);
                 updateCountdown();
             }
         }
@@ -898,7 +997,9 @@
 
         function clearWorkout(week, index) {
             if (confirm('Clear this workout?')) {
-                localStorage.removeItem(`workout-${week}-${index}`);
+                const key = `workout-${week}-${index}`;
+                localStorage.removeItem(key);
+                deleteFromFirebase(key);
                 renderWorkouts();
                 updateProgress();
             }
@@ -906,14 +1007,18 @@
 
         function deleteRecentWorkout(week, index) {
             if (confirm('Delete this workout from your history?')) {
-                localStorage.removeItem(`workout-${week}-${index}`);
+                const key = `workout-${week}-${index}`;
+                localStorage.removeItem(key);
+                deleteFromFirebase(key);
                 renderWorkouts();
                 updateProgress();
             }
         }
 
         function saveWorkout(week, index, data) {
-            localStorage.setItem(`workout-${week}-${index}`, JSON.stringify(data));
+            const key = `workout-${week}-${index}`;
+            localStorage.setItem(key, JSON.stringify(data));
+            saveToFirebase(key, data);
         }
 
         function getSavedWorkout(week, index) {
@@ -1028,7 +1133,9 @@
 
         function resetWorkout(week, index) {
             if (confirm('Reset this workout to default settings?')) {
-                localStorage.removeItem(`edited-${week}-${index}`);
+                const key = `edited-${week}-${index}`;
+                localStorage.removeItem(key);
+                deleteFromFirebase(key);
                 window.editingWorkout = null;
                 renderWorkouts();
             }
@@ -1040,7 +1147,9 @@
         }
 
         function saveEditedWorkout(week, index, data) {
-            localStorage.setItem(`edited-${week}-${index}`, JSON.stringify(data));
+            const key = `edited-${week}-${index}`;
+            localStorage.setItem(key, JSON.stringify(data));
+            saveToFirebase(key, data);
         }
 
         // Shopping list toggle
@@ -1246,7 +1355,7 @@
             event.target.value = ''; // Reset file input
         }
 
-        function clearAllData() {
+        async function clearAllData() {
             if (!confirm('Are you sure you want to clear ALL training data? This cannot be undone.')) {
                 return;
             }
@@ -1261,7 +1370,12 @@
                     keysToRemove.push(key);
                 }
             }
-            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+            // Clear from both localStorage and Firebase
+            for (const key of keysToRemove) {
+                localStorage.removeItem(key);
+                await deleteFromFirebase(key);
+            }
 
             RACE_DATE = new Date('2026-07-25');
             initRaceDateInput();
@@ -1272,12 +1386,29 @@
         }
 
         // Initialize
-        initRaceDateInput();
-        updateCountdown();
-        renderWorkouts();
-        renderNutrition();
-        updateProgress();
-        setInterval(updateCountdown, 60000); // Update countdown every minute
+        async function init() {
+            // Load data from Firebase first
+            await loadAllFromFirebase();
+
+            // Update race date from synced data
+            const savedRaceDateFromSync = localStorage.getItem('raceDate');
+            if (savedRaceDateFromSync) {
+                RACE_DATE = new Date(JSON.parse(savedRaceDateFromSync));
+            }
+
+            // Set up real-time sync
+            setupRealtimeSync();
+
+            // Render UI
+            initRaceDateInput();
+            updateCountdown();
+            renderWorkouts();
+            renderNutrition();
+            updateProgress();
+            setInterval(updateCountdown, 60000);
+        }
+
+        init();
     </script>
 </body>
 </html>
